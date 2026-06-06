@@ -93,18 +93,26 @@ export default function App() {
         >
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
             <h2 id="api-key-title" className="text-lg font-bold text-gray-800 mb-2">
-              Anthropic API 키 입력
+              Google Gemini API 키 입력
             </h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Claude API 키를 입력하면 AI 추천을 받을 수 있어요.
+            <p className="text-sm text-gray-500 mb-3">
+              Gemini API 키를 입력하면 AI 추천을 받을 수 있어요.
               <br />
               키는 브라우저에 저장되지 않습니다.
             </p>
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-xs text-[#378ADD] underline mb-3"
+            >
+              🔗 무료 API 키 발급받기 (Google AI Studio)
+            </a>
             <input
               type="password"
               value={localApiKey}
               onChange={(e) => setLocalApiKey(e.target.value)}
-              placeholder="sk-ant-..."
+              placeholder="AIza..."
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#378ADD] mb-4"
               aria-label="Anthropic API 키"
               onKeyDown={(e) => e.key === 'Enter' && handleSubmitKey()}
