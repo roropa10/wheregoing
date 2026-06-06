@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { OutingState, RecommendationResult } from '../types'
 
 const TRANSPORT_LABEL: Record<string, string> = {
@@ -24,15 +23,6 @@ export async function getRecommendations(
   state: OutingState,
   apiKey: string
 ): Promise<RecommendationResult> {
-  const genAI = new GoogleGenerativeAI(apiKey)
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash-latest',
-    generationConfig: { responseMimeType: 'application/json' },
-    systemInstruction: `당신은 대한민국 가족 나들이 전문 여행 컨설턴트입니다.
-유아 동반 가족의 현실적 조건을 정확히 이해하고, 실존하는 장소만 추천합니다.
-JSON 형식으로만 응답합니다.`,
-  })
-
   const childAgesText = state.childAges.length > 0
     ? state.childAges.map((age, i) => `아이${i + 1}: ${age}세`).join(', ')
     : '나이 미입력'
@@ -43,7 +33,11 @@ JSON 형식으로만 응답합니다.`,
     ...(state.customExtra.trim() ? [state.customExtra.trim()] : []),
   ].join(', ') || '없음'
 
-  const prompt = `아래 조건에 맞는 나들이 장소 3곳을 추천해주세요.
+  const systemPrompt = `당신은 대한민국 가족 나들이 전문 여행 컨설턴트입니다.
+유아 동반 가족의 현실적 조건을 정확히 이해하고, 실존하는 장소만 추천합니다.
+반드시 JSON 형식으로만 응답합니다. 다른 텍스트는 절대 포함하지 마세요.`
+
+  const userPrompt = `아래 조건에 맞는 나들이 장소 3곳을 추천해주세요.
 
 [조건]
 출발지: ${state.sido} ${state.sigungu}
@@ -79,8 +73,26 @@ JSON 형식으로만 응답합니다.`,
   "closingMessage": "오늘 나들이 한마디"
 }`
 
-  const result = await model.generateContent(prompt)
-  const text = result.response.text()
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+        generationConfig: { responseMimeType: 'application/json' },
+      }),
+    }
+  )
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error?.message || `API 오류 (${res.status})`)
+  }
+
+  const data = await res.json()
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('응답 파싱 오류')
   return JSON.parse(jsonMatch[0]) as RecommendationResult
