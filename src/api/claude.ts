@@ -26,7 +26,7 @@ export async function getRecommendations(
 ): Promise<RecommendationResult> {
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-1.5-flash',
     generationConfig: { responseMimeType: 'application/json' },
     systemInstruction: `당신은 대한민국 가족 나들이 전문 여행 컨설턴트입니다.
 유아 동반 가족의 현실적 조건을 정확히 이해하고, 실존하는 장소만 추천합니다.
